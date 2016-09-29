@@ -2,7 +2,7 @@ import { applyMiddleware, createStore } from 'redux';
 import axios from 'axios';
 import logger from 'redux-logger';
 import thunk from 'redux-thunk';
-
+import promise from 'redux-promise-middleware';
 
 const initialState = {
   fetiching: false,
@@ -13,11 +13,11 @@ const initialState = {
 
 const reducer = (state = initialState, action) => {
   switch (action.type) {
-    case 'FETCH_USERS_START': {
+    case 'FETCH_USERS_PENDING': {
       return {...state, fetiching: true};
       break;
     }
-    case 'RECEIVED_USERS': {
+    case 'FETCH_USERS_FULFILLED': {
       return {
         ...state,
         fetiching: false,
@@ -38,20 +38,14 @@ const reducer = (state = initialState, action) => {
  return state;
 }
 
-const middleware = applyMiddleware(thunk, logger());
+const middleware = applyMiddleware(promise(), thunk, logger());
 const store = createStore(reducer, middleware);
 
 store.subscribe(() => {
   console.log('store changed: ', store.getState())
 });
 
-store.dispatch((dispatch) => {
-  dispatch({type: 'FETCH_USERS_START'});
-  axios.get('http://rest.learncode.academy/api/wstern/users')
-    .then((response) => {
-      dispatch({type: 'RECEIVED_USERS', payload: response.data});
-    })
-    .catch((err) => {
-      dispatch({type: 'FETCH_USERS_REJECTED', payload: err});
-    });
+store.dispatch({
+  type: 'FETCH_USERS',
+  payload: axios.get('http://rest.learncode.academy/api/wstern/users')
 });
