@@ -1,23 +1,45 @@
-import { createStore } from 'redux';
+import { applyMiddleware, createStore } from 'redux';
 
 const reducer = function(state, action) {
  if (action.type === 'INC') {
    return state + action.payload;
- }
-
- if (action.type === 'DEC') {
+ } else if (action.type === 'DEC') {
    return state - action.payload;
+ } else if (action.type === 'E') {
+   throw new Error('This is an error!');
  }
 
  return state;
 }
 
-const store = createStore(reducer, 1);
+// it's own file
+const logger = (store) => (next) => (action) => {
+  console.log('-> action fired!', action);
+  next(action);
+}
+
+// it's own file
+const error = (store) => (next) => (action) => {
+  try {
+    next(action);
+  } catch (e) {
+    console.log('______ERROR!', e);
+  }
+}
+
+const middleware = applyMiddleware(logger, error);
+
+const store = createStore(reducer, 1, middleware);
+
+store.subscribe(() => {
+  console.log('store changed: ', store.getState())
+});
 
 store.dispatch({type: 'INC', payload: 2});
 store.dispatch({type: 'INC', payload: 6});
 store.dispatch({type: 'INC', payload: 1});
 store.dispatch({type: 'DEC', payload: 5});
+store.dispatch({type: 'E'});
 
 
 // import { combineReducers, createStore } from 'redux';
